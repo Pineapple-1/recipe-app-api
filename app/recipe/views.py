@@ -4,13 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from core.models import Tag,Ingredient
 from recipe.serializers import TagSerializer,IngredientSerializer
 
-
-class TagViewSet(viewsets.GenericViewSet, mixins.ListModelMixin ,mixins.CreateModelMixin):
-    """Manages the tag in the database"""
+class BaseViewSet(viewsets.GenericViewSet, mixins.ListModelMixin ,mixins.CreateModelMixin):
+    """Acts as base class for ingredients and tags"""
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user).order_by('-name')
@@ -20,14 +17,15 @@ class TagViewSet(viewsets.GenericViewSet, mixins.ListModelMixin ,mixins.CreateMo
         serializer.save(user=self.request.user)
         
 
-class IngredientViewSet(viewsets.GenericViewSet, mixins.ListModelMixin ,mixins.CreateModelMixin ):
-    """Manages the Ingredients in the database"""
+class TagViewSet(BaseViewSet):
+    """Manages the tag in the database"""
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
-    authentication_classes = (TokenAuthentication,)
-    permission_classes = (IsAuthenticated,)
+
+
+class IngredientViewSet(BaseViewSet):
+    """Manages the Ingredients in the database"""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user).order_by('-name')
 

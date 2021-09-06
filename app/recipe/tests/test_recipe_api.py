@@ -26,12 +26,11 @@ class PrivateIngredientApiTest(TestCase):
     """Test ingredients can be used by authorized user"""
 
     def setUp(self):
-        self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email='helo@world.com',
-            password='testpass'
-        )
-        self.client.force_authenticate()
+            email='helo@world.com', password='testpass')
+
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
 
     def test_retrieve_ingredient_list(self):
         """Test retriving a list of ingredient"""
@@ -41,6 +40,7 @@ class PrivateIngredientApiTest(TestCase):
         res = self.client.get(INGREDIENT_URL)
         ingredient = Ingredient.objects.all().order_by('-name')
         serializer = IngredientSerializer(ingredient, many=True)
+
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
@@ -52,6 +52,20 @@ class PrivateIngredientApiTest(TestCase):
         Ingredient.objects.create(user=imposter, name="Kale")
         ingredient = Ingredient.objects.create(user=self.user, name="Salt")
         res = self.client.get(INGREDIENT_URL)
-        self.assertEqual(res.status_code, status.HTTP_200_CREATED)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
-        self.assertEqual(res.data[0]['name'],ingredient.name)
+        self.assertEqual(res.data[0]['name'], ingredient.name)
+
+    def test_create_ingredient_successfull(self):
+        """Test creating new Ingredient"""
+        payload = {'name': 'red pepper'}
+        self.client.post(INGREDIENT_URL, payload)
+        exists = Ingredient.objects.filter(
+            user=self.user, name=payload['name']).exists()
+        self.assertTrue(exists)
+
+    def test_create_ingredient_invalid(self):
+        """Test creating new Ingredient invalid"""
+        payload = {'name': ''}
+        res = self.client.post(INGREDIENT_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
