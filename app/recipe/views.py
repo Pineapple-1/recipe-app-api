@@ -18,6 +18,7 @@ class TagViewSet(viewsets.GenericViewSet, mixins.ListModelMixin ,mixins.CreateMo
     def perform_create(self, serializer):
         """Create new tag"""
         serializer.save(user=self.request.user)
+        
 
 
     
